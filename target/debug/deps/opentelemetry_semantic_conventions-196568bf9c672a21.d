@@ -1,0 +1,7 @@
+/Users/hasselalcala/Documents/near_contracts/consensus_contract/target/debug/deps/libopentelemetry_semantic_conventions-196568bf9c672a21.rmeta: /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/lib.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/resource.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/trace.rs
+
+/Users/hasselalcala/Documents/near_contracts/consensus_contract/target/debug/deps/opentelemetry_semantic_conventions-196568bf9c672a21.d: /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/lib.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/resource.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/trace.rs
+
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/lib.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/resource.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/opentelemetry-semantic-conventions-0.9.0/src/trace.rs:

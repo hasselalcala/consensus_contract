@@ -1,0 +1,10 @@
+/Users/hasselalcala/Documents/near_contracts/consensus_contract/target/debug/deps/libcolored-ef9ec1e059404f78.rmeta: /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/lib.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/color.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/control.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/error.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/style.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/customcolors.rs
+
+/Users/hasselalcala/Documents/near_contracts/consensus_contract/target/debug/deps/colored-ef9ec1e059404f78.d: /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/lib.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/color.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/control.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/error.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/style.rs /Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/customcolors.rs
+
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/lib.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/color.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/control.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/error.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/style.rs:
+/Users/hasselalcala/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colored-2.1.0/src/customcolors.rs:
