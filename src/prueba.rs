@@ -82,6 +82,25 @@ impl Contract {
         self.participants.get(participant_id)
     }
 
+    fn get_request (&mut self, request_id : u64) -> bool {
+
+        let mut exist_request : bool = false;
+
+        //Request is empty
+        if self.request.len() == 0 {
+            exist_request = false;
+        } else {
+            for request in &self.request {
+                if request.request_id == request_id { //request exist
+                    exist_request = true;
+                } else { //request don't exist
+                    exist_request = false;
+                }
+            }
+        }
+        return exist_request;
+    }
+    
     pub fn request_governance_decision(&mut self, request_id: u64) {
         let new_request = Request {
             sender: env::predecessor_account_id(),
@@ -108,72 +127,53 @@ impl Contract {
 
     //Use the request_id to know which request gonna vote
     pub fn commit_by_miner(&mut self, request_id: u64, answer: String) {
-        //TODO: Función get_request usando request_id
-        let complete_request = match self.find_request_by_id(request_id) {
-            Some(request) => request,
-            None => panic!("Request not found"),
+
+        require!(self.get_request(request_id) == true, "Request don't exist");
+        require!(self.request.len() > 0, "no request register");
+
+        let complete_request = Request {
+            sender: env::predecessor_account_id(),
+            request_id: request_id,
+            start_time: env::epoch_height(),
+            commit_miner_deadline: env::epoch_height() + COMMIT_MINER_DURATION_EPOCH,
+            reveal_miner_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH,
+            commit_validator_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH
+                + COMMIT_VALIDATOR_DURATION_EPOCH,
+            reveal_validator_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH
+                + COMMIT_VALIDATOR_DURATION_EPOCH
+                + REVEAL_VALIDATOR_DURATION_EPOCH,
+            miners_proposals: LookupMap::new(b"m"),
+            validators_proposals: LookupMap::new(b"v"),
         };
-
-        // Verificar que estás a tiempo para comprometer
-        require!(
-            env::epoch_height() < complete_request.commit_miner_deadline,
-            "No time to commit"
-        );
-
-        // Verificar si eres un minero e insertar la propuesta
-        let allow_proposal = match self.get_register_participants(&env::predecessor_account_id()) {
-            Some(type_participant) => {
-                println!("Participant is {:?}", type_participant);
-                *type_participant == ParticipantType::Miner
-            }
-            None => panic!("Not register"),
-        };
-
-        if allow_proposal {
-            let proposal = MinerProposal {
-                proposal_hash: env::keccak256(answer.as_bytes()),
-                is_revealed: false,
-            };
-
-            // Insertar la propuesta en la solicitud encontrada
-            complete_request
-                .miners_proposals
-                .insert(env::predecessor_account_id(), proposal);
-        }
-    }
-
-    fn find_request_by_id(&mut self, request_id: u64) -> Option<&mut Request> {
-        for request in &mut self.request {
+        
+        for request in &self.request {
             if request.request_id == request_id {
-                return Some(request);
+                complete_request = request.clone();
+                break;
+            } else {
+                panic!("request doesn't exist");
             }
         }
-        None
-    }
+        //require que exista la propuesta para obtener los valores 
+        //require que estas en el tiempo de commit 
+        require!(env::epoch_height() < complete_request.commit_miner_deadline,"No time to commit");
+                
+        //verificar que eres un miner
+        //Haces commit 
 
-    //TODO: Answer in this method is a vector with the top ten
-    pub fn commit_by_validator(&mut self, request_id: u64, answer: String) {
-        // Buscar la solicitud por ID
-        let complete_request = match self.find_request_by_id(request_id) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
 
-        // Verificar que estás a tiempo para comprometer
-        require!(
-            env::epoch_height() > complete_request.reveal_miner_deadline,
-            "Miner commit time"
-        );
-        require!(
-            env::epoch_height() < complete_request.commit_validator_deadline,
-            "No time to commit"
-        );
 
-        // Verificar si eres un validador e insertar la propuesta
+        //Verify you are a miner and insert the proposal
         match self.get_register_participants(&env::predecessor_account_id()) {
             Some(type_participant) => {
                 println!("Participant is {:?}", type_participant);
-                if *type_participant == ParticipantType::Validator {
+                if *type_participant == ParticipantType::Miner {
                     let proposal = MinerProposal {
                         proposal_hash: env::keccak256(answer.as_bytes()),
                         is_revealed: false,
@@ -183,40 +183,74 @@ impl Contract {
                         .miners_proposals
                         .insert(env::predecessor_account_id(), proposal);
                 } else {
-                    panic!("You are not a validator");
+                    panic!("You are a validator");
                 }
             }
             None => {
-                panic!("Not registered");
+                panic!("Not register");
             }
         }
     }
 
-    pub fn reveal_by_miner(&mut self, request_id: u64, answer: String) {
-        let complete_request = match self.find_request_by_id(request_id) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
+    pub fn reveal_by_miner() {}
 
+    //TODO: Answer in this method is a vector with the top ten
+    pub fn commit_by_validator(&mut self, request_id: u64, answer: Vec<AccountId>) {
+        //TODO: Función get request usando request_id
+        let &mut complete_request;
+        for request in &self.request {
+            if request.request_id == request_id {
+                complete_request = request.clone();
+                require!(
+                    env::epoch_height() > complete_request.reveal_miner_deadline,
+                    "Miner commit/reveal time"
+                );
+                break;
+            } else {
+                panic!("request doesn't exist");
+            }
+        }
+
+        //verify you are on time to commit
+        
         require!(
-            env::epoch_height() > complete_request.commit_miner_deadline,
-            "commit time"
-        );
-        require!(
-            env::epoch_height() < complete_request.reveal_miner_deadline,
-            "No time to reveal"
+            env::epoch_height() < complete_request.commit_validator_deadline,
+            "No time to commit"
         );
 
-        //TODO.
-        //verificar que la propuesta aun no está revelada.
-        //Verificar que si tiene una propuesta en commit
-        //vuelve a calcular el hash con la respuesta
-        //Se compara el hash calculado con el hash almacenado
-        //Si coincide, se cambia el revealed a true
-        //Sino se dice que es una propuesta invalida porque no coinciden los hashes
+        //Verify you are a validator and insert the proposal
+        match self.get_register_participants(&env::predecessor_account_id()) {
+            Some(type_participant) => {
+                println!("Participant is {:?}", type_participant);
+
+                if *type_participant == ParticipantType::Validator {
+                
+                    let mut answer_as_bytes: Vec<u8> = Vec::new();
+                    for address in answer.iter() {
+                        let add_bytes = address.as_bytes().to_vec();
+                        answer_as_bytes.extend(add_bytes);
+                        answer_as_bytes.push(b'n');
+                    }
+                    
+                    let proposal = MinerProposal {
+                        proposal_hash: env::keccak256(&answer_as_bytes),
+                        is_revealed: false,
+                    };
+
+                    complete_request.miners_proposals.insert(env::predecessor_account_id(), proposal);
+                } else {
+                    panic!("You are a miner");
+                }
+            }
+            None => {
+                panic!("Not register");
+            }
+        }
     }
+
     pub fn reveal_by_validator() {}
 }
+
 
 #[cfg(test)]
 mod tests {
