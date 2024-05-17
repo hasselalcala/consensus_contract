@@ -17,8 +17,7 @@ pub enum ParticipantType {
     Validator,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug)]
-#[derive(Clone)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct MinerProposal {
     proposal_hash: Vec<u8>,
@@ -69,43 +68,40 @@ impl Contract {
     }
 
     pub fn register_miner(&mut self, participant_id: AccountId) {
-        
         let miner_to_register = self.get_register_validator(participant_id.clone());
         require!(miner_to_register.is_none());
 
-        let miner_to_register= self.get_register_miner(participant_id.clone());
+        let miner_to_register = self.get_register_miner(participant_id.clone());
         require!(miner_to_register.is_none());
-        
+
         self.miners.push(participant_id);
-        
     }
 
     pub fn get_register_miner(&mut self, participant_id: AccountId) -> Option<&AccountId> {
-        for miner in self.miners.iter(){
+        for miner in self.miners.iter() {
             if *miner == participant_id {
                 return Some(miner);
             }
-        }   
+        }
         None
     }
 
     pub fn register_validator(&mut self, participant_id: AccountId) {
-        
         let validator_to_register = self.get_register_validator(participant_id.clone());
         require!(validator_to_register.is_none());
 
-        let miner_to_register= self.get_register_miner(participant_id.clone());
+        let miner_to_register = self.get_register_miner(participant_id.clone());
         require!(miner_to_register.is_none());
-        
+
         self.validators.push(participant_id);
     }
 
     pub fn get_register_validator(&mut self, participant_id: AccountId) -> Option<&AccountId> {
-        for miner in self.miners.iter(){
-            if *miner == participant_id {
-                return Some(miner);
+        for validator in self.validators.iter() {
+            if *validator == participant_id {
+                return Some(validator);
             }
-        }   
+        }
         None
     }
 
@@ -143,7 +139,6 @@ impl Contract {
     }
 
     pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
-
         let miner_to_commit = self.get_register_miner(miner);
         require!(miner_to_commit.is_some());
 
@@ -155,20 +150,23 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-        require!(env::epoch_height() < complete_request.commit_miner_deadline,"No time to commit");
+        require!(
+            env::epoch_height() < complete_request.commit_miner_deadline,
+            "No time to commit"
+        );
 
         let proposal = MinerProposal {
             proposal_hash: env::keccak256(answer.as_bytes()),
-            is_revealed: false,    
+            is_revealed: false,
         };
 
-        complete_request.miners_proposals.insert(env::predecessor_account_id(), proposal);
-        
+        complete_request
+            .miners_proposals
+            .insert(env::predecessor_account_id(), proposal);
     }
 
     //TODO: Answer in this method is a vector with the top ten
     pub fn commit_by_validator(&mut self, validator: AccountId, request_id: u64, answer: String) {
-        
         let validator_to_commit = self.get_register_validator(validator);
         require!(validator_to_commit.is_some());
 
@@ -180,21 +178,27 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-        require!(env::epoch_height() > complete_request.reveal_miner_deadline, "Miner commit time");
-        require!(env::epoch_height() < complete_request.commit_validator_deadline,"No time to commit");
+        require!(
+            env::epoch_height() > complete_request.reveal_miner_deadline,
+            "Miner commit time"
+        );
+        require!(
+            env::epoch_height() < complete_request.commit_validator_deadline,
+            "No time to commit"
+        );
 
-        //TODO: answer is a vector with the list of miners to vote 
+        //TODO: answer is a vector with the list of miners to vote
         let proposal = ValidatorProposal {
             proposal_hash: env::keccak256(answer.as_bytes()),
             is_revealed: false,
-            miner_addresses: Vec::new(), 
+            miner_addresses: Vec::new(),
         };
-        complete_request.validators_proposals.insert(env::predecessor_account_id(), proposal);
-                
+        complete_request
+            .validators_proposals
+            .insert(env::predecessor_account_id(), proposal);
     }
 
     pub fn reveal_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
-
         let request_exist = self.get_request_by_id(request_id);
         require!(request_exist.is_some());
 
@@ -205,50 +209,71 @@ impl Contract {
             Some(request) => request,
             None => panic!("Request not found"),
         };
-        
-        require!(env::epoch_height() > complete_request.commit_miner_deadline,"commit time");
-        require!(env::epoch_height() < complete_request.reveal_miner_deadline,"No time to reveal");
-        
-        let save_proposal = match complete_request.miners_proposals.get_mut(&miner){
-            Some(proposal) =>  proposal,
-            None => panic!("proposal not found"),
-         };
 
-        require!(save_proposal.is_revealed == false, "Proposal already reveal");
-        
+        require!(
+            env::epoch_height() > complete_request.commit_miner_deadline,
+            "commit time"
+        );
+        require!(
+            env::epoch_height() < complete_request.reveal_miner_deadline,
+            "No time to reveal"
+        );
+
+        let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
+            Some(proposal) => proposal,
+            None => panic!("proposal not found"),
+        };
+
+        require!(
+            save_proposal.is_revealed == false,
+            "Proposal already reveal"
+        );
+
         let answer_to_verify = env::keccak256(answer.as_bytes());
-        require!(save_proposal.proposal_hash == answer_to_verify, "Answer don't match");
+        require!(
+            save_proposal.proposal_hash == answer_to_verify,
+            "Answer don't match"
+        );
 
         save_proposal.is_revealed = true;
-        
     }
 
-    pub fn reveal_by_validator(&mut self, validator : AccountId, request_id: u64, answer: String) {
-
+    pub fn reveal_by_validator(&mut self, validator: AccountId, request_id: u64, answer: String) {
         let request_exist = self.get_request_by_id(request_id);
         require!(request_exist.is_some());
 
         let validator_to_reveal = self.get_register_miner(validator.clone());
         require!(validator_to_reveal.is_some());
 
-
         let complete_request = match self.get_request_by_id(request_id) {
             Some(request) => request,
             None => panic!("Request not found"),
         };
-        
-        require!(env::epoch_height() > complete_request.commit_validator_deadline,"commit time");
-        require!(env::epoch_height() < complete_request.reveal_validator_deadline,"No time to reveal");
 
-        let save_proposal = match complete_request.validators_proposals.get_mut(&validator){
-            Some(proposal) =>  proposal,
+        require!(
+            env::epoch_height() > complete_request.commit_validator_deadline,
+            "commit time"
+        );
+        require!(
+            env::epoch_height() < complete_request.reveal_validator_deadline,
+            "No time to reveal"
+        );
+
+        let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {
+            Some(proposal) => proposal,
             None => panic!("proposal not found"),
-         };
+        };
 
-        require!(save_proposal.is_revealed == false, "Proposal already reveal");
-        
+        require!(
+            save_proposal.is_revealed == false,
+            "Proposal already reveal"
+        );
+
         let answer_to_verify = env::keccak256(answer.as_bytes());
-        require!(save_proposal.proposal_hash == answer_to_verify, "Answer don't match");
+        require!(
+            save_proposal.proposal_hash == answer_to_verify,
+            "Answer don't match"
+        );
 
         save_proposal.is_revealed = true;
     }
@@ -256,59 +281,166 @@ impl Contract {
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
+
     use super::*;
 
     #[test]
     fn test_register_miner() {
+        let mut contract = Contract::new();
+        let participant_1: AccountId = "hassel.near".parse().unwrap();
+        let participant_2: AccountId = "edson.near".parse().unwrap();
 
+        contract.miners.push(participant_1.clone());
+        contract.miners.push(participant_2.clone());
+
+        assert!(contract.miners[0] == participant_1);
+        assert!(contract.miners[1] == participant_2);
+            
     }
 
     #[test]
     fn test_get_register_miner() {
+        let mut contract = Contract::new();
+        let participant_1: AccountId = "hassel.near".parse().unwrap();
+        let participant_2: AccountId = "edson.near".parse().unwrap();
 
+        contract.miners.push(participant_1.clone());
+        contract.miners.push(participant_2.clone());
+
+        let register_miner = contract.get_register_miner(participant_1.clone());
+
+        let miner = match register_miner {
+            Some(register) => register,
+            None => panic!("Miner not register"),
+        };
+
+        assert_eq!(*miner , participant_1);
+
+        let register_miner = contract.get_register_miner(participant_2.clone());
+
+        let miner = match register_miner {
+            Some(register) => register,
+            None => panic!("Miner not register"),
+        };
+
+        assert_eq!(*miner , participant_2);
     }
 
+    //TODO: test de que no deje registrar a alguien que ya está registrado en el caso contrario,
+    //es decir que si ya está registrado como miner, no se pueda registrar como validator
     #[test]
     fn test_register_validator() {
+        let mut contract = Contract::new();
+        let participant_1: AccountId = "alice.near".parse().unwrap();
+        let participant_2: AccountId = "bob.near".parse().unwrap();
 
+        contract.validators.push(participant_1.clone());
+        contract.validators.push(participant_2.clone());
+
+        assert!(contract.validators[0] == participant_1);
+        assert!(contract.validators[1] == participant_2);
     }
 
     #[test]
     fn test_get_register_validator() {
-        
-    }
+        let mut contract = Contract::new();
+        let participant_1: AccountId = "anne.near".parse().unwrap();
+        let participant_2: AccountId = "bob.near".parse().unwrap();
 
-    #[test]
-    fn test_request_governance_decision() {
+        contract.validators.push(participant_1.clone());
+        contract.validators.push(participant_2.clone());
 
-    }
+        let register_validator = contract.get_register_validator(participant_1.clone());
 
+        let validator = match register_validator {
+            Some(register) => register,
+            None => panic!("Validator not register"),
+        };
 
-    #[test]
-    fn test_commit_by_miner(){
-        
-    }
+        assert_eq!(*validator , participant_1);
 
-    #[test]
-    fn test_commit_by_validator() {
+        let register_validator = contract.get_register_validator(participant_2.clone());
+
+        let validator = match register_validator {
+            Some(register) => register,
+            None => panic!("Validator not register"),
+        };
+
+        assert_eq!(*validator , participant_2);
 
     }
 
     #[test]
     fn test_get_request_by_id() {
 
-    }
-
-    #[test]
-    fn test_reveal_by_miner() {
-
-    }
-
-    #[test]
-    fn test_reveal_by_validator() {
+        let request = Request {
+            sender: "anne.near".parse().unwrap(),
+            request_id: 100,
+            start_time: env::epoch_height(),
+            commit_miner_deadline: env::epoch_height() + COMMIT_MINER_DURATION_EPOCH,
+            reveal_miner_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH,
+            commit_validator_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH
+                + COMMIT_VALIDATOR_DURATION_EPOCH,
+            reveal_validator_deadline: env::epoch_height()
+                + COMMIT_MINER_DURATION_EPOCH
+                + REVEAL_MINER_DURATION_EPOCH
+                + COMMIT_VALIDATOR_DURATION_EPOCH
+                + REVEAL_VALIDATOR_DURATION_EPOCH,
+            miners_proposals: LookupMap::new(b"m"),
+            validators_proposals: LookupMap::new(b"v"),
+        }; 
         
+        let mut contract = Contract::new();
+        contract.request.push(request);
+
+        let register_request = contract.get_request_by_id(100);
+
+        let request = match register_request {
+            Some(register) => register,
+            None => panic!("request not register")
+        };
+
+        assert_eq!(request.request_id , 100);
+
     }
 
+    #[test]
+    fn test_request_governance_decision() {
+
+        //TODO: verificar si esta prueba es correcto el planteamiento
+        let mut contract = Contract::new();
+        contract.request_governance_decision(100);
+        
+        let register_request = contract.get_request_by_id(100);
+
+        let request = match register_request {
+            Some(register) => register,
+            None => panic!("request not register")
+        };
+
+        assert_eq!(request.request_id , 100);
+
+    }
+
+    //TODO: Como manejo los tiempos "epoch" para que pueda hacer los siguientes Test
+    // #[test]
+    // fn test_commit_by_miner() {}
+
+    // #[test]
+    // fn test_commit_by_validator() {}
+
+    // #[test]
+    // fn test_reveal_by_miner() {}
+
+    // #[test]
+    // fn test_reveal_by_validator() {}
+
+    /*
     #[test]
     fn test_register_participants() {
         let mut contract = Contract::new();
@@ -342,5 +474,5 @@ mod tests {
     // #[test]
     // fn test_get_register_participants(){
 
-    // }
+    // } */
 }
