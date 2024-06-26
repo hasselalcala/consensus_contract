@@ -1,6 +1,4 @@
-/// Import `borsh` from `near_sdk` crate
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-/// Import `serde` from `near_sdk` crate
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, near_bindgen, require, AccountId, PanicOnDefault};
@@ -9,13 +7,6 @@ const COMMIT_MINER_DURATION_EPOCH: u64 = 5;
 const REVEAL_MINER_DURATION_EPOCH: u64 = 1;
 const COMMIT_VALIDATOR_DURATION_EPOCH: u64 = 5;
 const REVEAL_VALIDATOR_DURATION_EPOCH: u64 = 1;
-
-#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, PartialEq)]
-#[serde(crate = "near_sdk::serde")]
-pub enum ParticipantType {
-    Miner,
-    Validator,
-}
 
 #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone)]
 #[serde(crate = "near_sdk::serde")]
